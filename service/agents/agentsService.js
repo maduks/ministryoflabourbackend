@@ -137,13 +137,9 @@ class AgentsService {
   }
   async updateAgent(agentId, agentData) {
     try {
-      const updatedAgent = await Agent.findByIdAndUpdate(
-        agentData.agentId,
-        agentData,
-        {
-          new: true,
-        }
-      );
+      const updatedAgent = await Agent.findByIdAndUpdate(agentId, agentData, {
+        new: true,
+      });
       console.log("agentData", agentData);
       console.log("updatedAgent", updatedAgent);
       if (!updatedAgent) return "Agent not found";

@@ -66,6 +66,7 @@ class AgentsController {
       const user = req.headers["user-id"];
       const role = await User.findById(user);
       const agent = await agentService.updateAgent(agentId, req.body);
+      console.log(agent);
       if (!agent || agent == "Agent not found") {
         return res.status(400).json({ message: "Coundn't update an agent" });
       }
