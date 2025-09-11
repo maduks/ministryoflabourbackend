@@ -1,0 +1,10 @@
+const express = require("express");
+const router = express.Router();
+const MinistryController = require("../../controllers//MinistryController/ministryController");
+router.post("/create", MinistryController.createMinistry);
+router.get("/:minId", MinistryController.getMinistry);
+router.post("/fetch", MinistryController.getAllMinistry);
+router.put("/:minId", MinistryController.updateMinistry);
+router.delete("/:minId", MinistryController.deleteMinistry);
+router.post("/total", MinistryController.getTotalMinistries);
+module.exports = router;
