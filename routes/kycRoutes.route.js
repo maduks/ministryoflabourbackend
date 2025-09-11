@@ -8,6 +8,7 @@ const KycController = require("../controllers/KycController/kycController");
 // } = require("../middleware/validateRequest");
 
 router.post("/send", KycController.submitKyc);
+router.post("/getBankList", KycController.getBankList);
 // router.post("/matchprofile", KycController.checProfilekMatch);
 router.post("/retrieve", KycController.getKyc);
 router.post("/allkyc", KycController.getAllKyc);

@@ -4,6 +4,7 @@ const profileService = require("../../service/userProfile/userProfileService");
 const { validationResult } = require("express-validator");
 const calculateStringMatch = require("../../helpers/matchprofile");
 const { sendCreateAccount } = require("../../utils/createaccountSocket");
+const { default: axios } = require("axios");
 class KycController {
   async submitKyc(req, res) {
     try {
@@ -71,6 +72,21 @@ class KycController {
         return res.status(404).json({ message: "KYC for user not found" });
       }
       res.json(kyc);
+    } catch (error) {
+      res.status(500).json({ errors: error.message });
+    }
+  }
+
+  async getBankList(req, res) {
+    try {
+      const banks = await axios.post(
+        "http://13.60.216.170:8000/api/collection/get-banks"
+      );
+      if (!banks) {
+        return res.status(404).json({ message: "Bank list not found" });
+      }
+      //console.log(banks.data);
+      res.status(200).json(banks.data);
     } catch (error) {
       res.status(500).json({ errors: error.message });
     }
