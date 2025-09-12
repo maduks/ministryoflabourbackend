@@ -77,13 +77,16 @@ class MinistryController {
         email: req.body.email,
         phoneNumber: req.body.phoneNumber,
         logo: req.body.logo,
+        acessTypes: req.body.accessTypes,
       };
 
       if (req.body?.password !== undefined)
         updateData.password = await passwordHash.hashPassword(
           req.body.password
         );
-      console.log(minId);
+
+      console.log(req.body);
+
       const minup = await ministryService.updateMinistry(minId, minData);
       await userProfileService.updateUserNoId(minId, updateData);
 
