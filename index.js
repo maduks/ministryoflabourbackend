@@ -32,6 +32,7 @@ const propertyRoutes = require("./routes/property/propertyRoute");
 const listingRoute = require("./routes/listing/listingRoute");
 const reportsRoute = require("./routes/reports/reportRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const comprehensiveAnalyticsRoutes = require("./routes/comprehensiveAnalyticsRoutes");
 // Import route modules
 const usersRegistrationRoute = require("./routes/registration.route");
 const ministryRoute = require("./routes/ministry/ministryRoute");
@@ -124,6 +125,7 @@ db().then(() => {
   app.use("/api/v1/templates", templatesRoute);
   app.use("/api/v1/submissions", submissionRoutes);
   app.use("/api/v1/analytics", analyticsRoutes);
+  app.use("/api/v1/comprehensive-analytics", comprehensiveAnalyticsRoutes);
 
   // app.use(
   //   "/api/v1/serviceproviders",
