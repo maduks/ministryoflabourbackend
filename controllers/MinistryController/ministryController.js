@@ -87,7 +87,7 @@ class MinistryController {
 
       console.log(req.body);
 
-      const minup = await ministryService.updateMinistry(minId, minData);
+      const minup = await ministryService.updateMinistry(minId, req.body);
       await userProfileService.updateUserNoId(minId, updateData);
 
       auditLog.log(
