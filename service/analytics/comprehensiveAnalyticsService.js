@@ -11,9 +11,42 @@ const AuditLog = require("../../models/AuditLog");
 const KYCDocument = require("../../models/Kyc");
 const moment = require("moment");
 
-// System Overview Analytics
-async function getSystemOverview() {
+// Helper function to get submissions by state
+async function getSubmissionsByState(state, status = null) {
   try {
+    // Get users in the specified state
+    const usersInState = await User.find({ state: state }).select("_id");
+    const userIds = usersInState.map((user) => user._id);
+
+    // Build query for submissions
+    const query = { agentId: { $in: userIds } };
+    if (status) {
+      query.status = status;
+    }
+
+    return await Submission.countDocuments(query);
+  } catch (error) {
+    console.error(`Error getting submissions for state ${state}:`, error);
+    return 0;
+  }
+}
+
+// System Overview Analytics
+async function getSystemOverview(stateFilter = null) {
+  try {
+    // Build state filter for users
+    const userStateFilter = stateFilter ? { state: stateFilter } : {};
+
+    // For ministries, we need to check if they have users in the specified state
+    let ministryFilter = {};
+    if (stateFilter) {
+      // Get ministries that have users in the specified state
+      const ministriesWithUsersInState = await User.distinct("ministry", {
+        state: stateFilter,
+      });
+      ministryFilter = { _id: { $in: ministriesWithUsersInState } };
+    }
+
     const [
       totalUsers,
       activeUsers,
@@ -24,14 +57,22 @@ async function getSystemOverview() {
       pendingSubmissions,
       rejectedSubmissions,
     ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ status: "active" }),
-      Ministries.countDocuments(),
-      Ministries.countDocuments({ status: "Active" }),
-      Submission.countDocuments(),
-      Submission.countDocuments({ status: "approved" }),
-      Submission.countDocuments({ status: "pending" }),
-      Submission.countDocuments({ status: "rejected" }),
+      User.countDocuments(userStateFilter),
+      User.countDocuments({ ...userStateFilter, status: "active" }),
+      Ministries.countDocuments(ministryFilter),
+      Ministries.countDocuments({ ...ministryFilter, status: "Active" }),
+      stateFilter
+        ? getSubmissionsByState(stateFilter)
+        : Submission.countDocuments(),
+      stateFilter
+        ? getSubmissionsByState(stateFilter, "approved")
+        : Submission.countDocuments({ status: "approved" }),
+      stateFilter
+        ? getSubmissionsByState(stateFilter, "pending")
+        : Submission.countDocuments({ status: "pending" }),
+      stateFilter
+        ? getSubmissionsByState(stateFilter, "rejected")
+        : Submission.countDocuments({ status: "rejected" }),
     ]);
 
     // Calculate system uptime (mock data - in real scenario, you'd track this)
@@ -280,8 +321,14 @@ async function getSecurityMetrics() {
 }
 
 // User Demographics Analytics
-async function getUserDemographics() {
+async function getUserDemographics(stateFilter = null) {
   try {
+    // Build state filter for KYC and User queries
+    const kycStateFilter = stateFilter
+      ? { state: stateFilter }
+      : { state: { $exists: true, $ne: null, $ne: "" } };
+    const userStateFilter = stateFilter ? { state: stateFilter } : {};
+
     const [
       usersByState,
       usersByRole,
@@ -290,24 +337,36 @@ async function getUserDemographics() {
       usersByAgeGroup,
     ] = await Promise.all([
       // Use KYC data for more accurate state distribution
-      KYCDocument.aggregate([
-        { $match: { state: { $exists: true, $ne: null, $ne: "" } } },
-        { $group: { _id: "$state", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-        { $project: { state: "$_id", users: "$count", _id: 0 } },
-      ]),
+      stateFilter
+        ? // If filtering by state, return only that state
+          [
+            {
+              state: stateFilter,
+              users: await KYCDocument.countDocuments(kycStateFilter),
+            },
+          ]
+        : // Otherwise, return all states
+          KYCDocument.aggregate([
+            { $match: { state: { $exists: true, $ne: null, $ne: "" } } },
+            { $group: { _id: "$state", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            { $project: { state: "$_id", users: "$count", _id: 0 } },
+          ]),
       User.aggregate([
+        { $match: userStateFilter },
         { $group: { _id: "$role", count: { $sum: 1 } } },
         { $project: { name: "$_id", value: "$count", _id: 0 } },
       ]),
       User.aggregate([
-        { $match: { gender: { $exists: true, $ne: null } } },
+        {
+          $match: { ...userStateFilter, gender: { $exists: true, $ne: null } },
+        },
         { $group: { _id: "$gender", count: { $sum: 1 } } },
         { $project: { name: "$_id", value: "$count", _id: 0 } },
       ]),
-      getRegistrationTrend(User, 4),
-      getAgeGroupDistribution(),
+      getRegistrationTrend(User, 4, stateFilter),
+      getAgeGroupDistribution(stateFilter),
     ]);
 
     return {
@@ -588,15 +647,22 @@ async function getRecentActivityLogs() {
 }
 
 // Helper Functions
-async function getRegistrationTrend(Model, months) {
+async function getRegistrationTrend(Model, months, stateFilter = null) {
   const trend = [];
   for (let i = months - 1; i >= 0; i--) {
     const monthStart = moment().subtract(i, "month").startOf("month");
     const monthEnd = moment().subtract(i, "month").endOf("month");
 
-    const count = await Model.countDocuments({
+    const query = {
       createdAt: { $gte: monthStart.toDate(), $lte: monthEnd.toDate() },
-    });
+    };
+
+    // Add state filter if provided
+    if (stateFilter) {
+      query.state = stateFilter;
+    }
+
+    const count = await Model.countDocuments(query);
 
     trend.push({
       month: monthStart.format("MMM"),
@@ -606,12 +672,20 @@ async function getRegistrationTrend(Model, months) {
   return trend;
 }
 
-async function getAgeGroupDistribution() {
+async function getAgeGroupDistribution(stateFilter = null) {
   try {
-    // Get all KYC documents with date of birth
-    const kycDocuments = await KYCDocument.find({
+    // Build query for KYC documents
+    const query = {
       dateOfBirth: { $exists: true, $ne: null, $ne: "" },
-    }).lean();
+    };
+
+    // Add state filter if provided
+    if (stateFilter) {
+      query.state = stateFilter;
+    }
+
+    // Get KYC documents with date of birth
+    const kycDocuments = await KYCDocument.find(query).lean();
 
     const ageGroups = {
       "18-25": 0,
@@ -718,7 +792,7 @@ async function getApprovalTrend(months) {
 }
 
 // Main function to get all analytics data
-async function getAllAnalyticsData() {
+async function getAllAnalyticsData(stateFilter = null) {
   try {
     const [
       systemOverview,
@@ -736,20 +810,20 @@ async function getAllAnalyticsData() {
       topPerformingAgents,
       recentActivityLogs,
     ] = await Promise.all([
-      getSystemOverview(),
-      getTrends(),
-      getMinistryPerformance(),
-      getMonthlyData(),
+      getSystemOverview(stateFilter),
+      getTrends(stateFilter),
+      getMinistryPerformance(stateFilter),
+      getMonthlyData(stateFilter),
       getSystemHealth(),
       getSecurityMetrics(),
-      getUserDemographics(),
-      getAgentDemographics(),
-      getMinistryDemographics(),
-      getProviderDemographics(),
-      getPropertyDemographics(),
-      getActivityAnalytics(),
-      getTopPerformingAgents(),
-      getRecentActivityLogs(),
+      getUserDemographics(stateFilter),
+      getAgentDemographics(stateFilter),
+      getMinistryDemographics(stateFilter),
+      getProviderDemographics(stateFilter),
+      getPropertyDemographics(stateFilter),
+      getActivityAnalytics(stateFilter),
+      getTopPerformingAgents(stateFilter),
+      getRecentActivityLogs(stateFilter),
     ]);
 
     return {
@@ -767,6 +841,7 @@ async function getAllAnalyticsData() {
       activityAnalytics,
       topPerformingAgents,
       recentActivityLogs,
+      filterApplied: stateFilter ? { state: stateFilter } : null,
     };
   } catch (error) {
     throw new Error(`Error getting all analytics data: ${error.message}`);

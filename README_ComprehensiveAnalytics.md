@@ -20,6 +20,14 @@ Authorization: Bearer <your-jwt-token>
 
 **Description:** Returns all analytics data in a single request, matching the structure of your mock data.
 
+**Query Parameters:**
+- `state` (optional): Filter analytics data by state (e.g., `?state=Abia`, `?state=Lagos`)
+
+**Examples:**
+- Get all analytics: `GET /api/v1/comprehensive-analytics/all`
+- Get analytics for Abia state: `GET /api/v1/comprehensive-analytics/all?state=Abia`
+- Get analytics for Lagos state: `GET /api/v1/comprehensive-analytics/all?state=Lagos`
+
 **Response Structure:**
 ```json
 {
@@ -169,9 +177,12 @@ Authorization: Bearer <your-jwt-token>
     "recentActivityLogs": [
       "[2024-04-01] Agent John Doe submitted a new property registration.",
       "[2024-04-01] Ministry of Health approved a new provider."
-    ]
+    ],
+    "filterApplied": {
+      "state": "Abia"
+    }
   },
-  "message": "Analytics data retrieved successfully"
+  "message": "Analytics data for Abia retrieved successfully"
 }
 ```
 
@@ -181,6 +192,9 @@ Authorization: Bearer <your-jwt-token>
 **Endpoint:** `GET /api/v1/comprehensive-analytics/system-overview`
 
 **Description:** Returns system overview metrics including user counts, ministry counts, and submission statistics.
+
+**Query Parameters:**
+- `state` (optional): Filter data by state (e.g., `?state=Abia`)
 
 ### 3. Trends
 **Endpoint:** `GET /api/v1/comprehensive-analytics/trends`
@@ -211,6 +225,9 @@ Authorization: Bearer <your-jwt-token>
 **Endpoint:** `GET /api/v1/comprehensive-analytics/user-demographics`
 
 **Description:** Returns user demographic data including distribution by state, role, gender, and age groups.
+
+**Query Parameters:**
+- `state` (optional): Filter data by state (e.g., `?state=Abia`)
 
 ### 9. Agent Demographics
 **Endpoint:** `GET /api/v1/comprehensive-analytics/agent-demographics`
@@ -289,9 +306,21 @@ curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/all" \
   -H "Authorization: Bearer your-jwt-token"
 ```
 
+### Get Analytics for Specific State
+```bash
+curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/all?state=Abia" \
+  -H "Authorization: Bearer your-jwt-token"
+```
+
 ### Get System Overview Only
 ```bash
 curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/system-overview" \
+  -H "Authorization: Bearer your-jwt-token"
+```
+
+### Get System Overview for Specific State
+```bash
+curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/system-overview?state=Lagos" \
   -H "Authorization: Bearer your-jwt-token"
 ```
 
@@ -301,10 +330,18 @@ curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/user-demograph
   -H "Authorization: Bearer your-jwt-token"
 ```
 
+### Get User Demographics for Specific State
+```bash
+curl -X GET "http://localhost:8000/api/v1/comprehensive-analytics/user-demographics?state=Kano" \
+  -H "Authorization: Bearer your-jwt-token"
+```
+
 ## Notes
 
 - All endpoints require admin-level authentication
 - Data is calculated in real-time from the database
+- **State filtering**: Use the `?state=StateName` query parameter to filter analytics by state
 - Some metrics (like system health) may include mock data where real monitoring isn't available
-- Age group distribution uses mock data since the User model doesn't include age fields
+- Age group distribution now uses real data from KYC date of birth fields
 - Security metrics are based on audit logs and may need additional implementation for full functionality
+- When filtering by state, the response includes a `filterApplied` field showing the active filter

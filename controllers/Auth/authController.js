@@ -599,6 +599,18 @@ const AuthController = {
       return false;
     }
   },
+
+  getUserByEmail: async (req, res) => {
+    try {
+      const { email } = req.body;
+      const auth = new Auth();
+      const user = await auth.getLogin(email);
+      return res.status(200).json({ user });
+    } catch (error) {
+      console.error("Error while getting user by email " + error);
+      return false;
+    }
+  },
   ResendVerifyCode: async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -650,7 +662,7 @@ const AuthController = {
       const hash_crypt = crypto.randomBytes(32).toString("hex");
 
       const verifyUsertokenData = {
-        userId: userId,
+        userId: userId ?? user._id,
         token: hash_crypt,
         code: veri_code,
       };

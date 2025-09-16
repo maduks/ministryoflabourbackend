@@ -19,11 +19,14 @@ const {
 // Get all analytics data in one endpoint
 exports.getAllAnalytics = async (req, res) => {
   try {
-    const analyticsData = await getAllAnalyticsData();
+    const { state } = req.query;
+    const analyticsData = await getAllAnalyticsData(state);
     res.status(200).json({
       success: true,
       data: analyticsData,
-      message: "Analytics data retrieved successfully",
+      message: state
+        ? `Analytics data for ${state} retrieved successfully`
+        : "Analytics data retrieved successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -37,11 +40,14 @@ exports.getAllAnalytics = async (req, res) => {
 // System Overview endpoint
 exports.getSystemOverview = async (req, res) => {
   try {
-    const systemOverview = await getSystemOverview();
+    const { state } = req.query;
+    const systemOverview = await getSystemOverview(state);
     res.status(200).json({
       success: true,
       data: systemOverview,
-      message: "System overview retrieved successfully",
+      message: state
+        ? `System overview for ${state} retrieved successfully`
+        : "System overview retrieved successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -145,11 +151,14 @@ exports.getSecurityMetrics = async (req, res) => {
 // User Demographics endpoint
 exports.getUserDemographics = async (req, res) => {
   try {
-    const userDemographics = await getUserDemographics();
+    const { state } = req.query;
+    const userDemographics = await getUserDemographics(state);
     res.status(200).json({
       success: true,
       data: userDemographics,
-      message: "User demographics retrieved successfully",
+      message: state
+        ? `User demographics for ${state} retrieved successfully`
+        : "User demographics retrieved successfully",
     });
   } catch (error) {
     res.status(500).json({

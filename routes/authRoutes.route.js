@@ -29,6 +29,7 @@ router.post(
   userResetRequestDataValidation,
   AuthController.ResetPasswordRequest
 );
+router.post("/getUserByEmail", AuthController.getUserByEmail);
 router.post(
   "/resend-verify-code",
   userResetRequestDataValidation,
