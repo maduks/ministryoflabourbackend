@@ -14,29 +14,23 @@ const questionSchema = new mongoose.Schema(
     },
     questionType: {
       type: String,
-      enum: ["multiple-choice", "true-false", "short-answer", "essay"],
-      default: "multiple-choice",
+      enum: ["multiple_choice", "true_false", "short_answer", "practical"],
+      default: "multiple_choice",
+      required: true,
     },
-    options: [
-      {
-        text: {
-          type: String,
-          required: true,
-        },
-        isCorrect: {
-          type: Boolean,
-          default: false,
-        },
-      },
-    ],
+    options: {
+      type: [String], // Array of strings for multiple_choice questions
+      default: [],
+    },
     correctAnswer: {
-      type: String, // For short-answer and essay types
-      trim: true,
+      type: mongoose.Schema.Types.Mixed, // Can be String or Array for multiple correct answers
+      required: true,
     },
     points: {
       type: Number,
       default: 1,
-      min: 0,
+      min: 1,
+      required: true,
     },
     explanation: {
       type: String,
@@ -46,6 +40,14 @@ const questionSchema = new mongoose.Schema(
       type: String,
       enum: ["easy", "medium", "hard"],
       default: "medium",
+    },
+    category: {
+      type: String,
+      trim: true,
+    },
+    attachments: {
+      type: [String], // Array of file URLs
+      default: [],
     },
     order: {
       type: Number,
