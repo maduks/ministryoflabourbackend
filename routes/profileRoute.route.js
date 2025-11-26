@@ -1,5 +1,6 @@
 const express = require("express");
 const userProfileController = require("../controllers/UsersProfile/userProfileController");
+const userDetailsController = require("../controllers/UsersProfile/userDetailsController");
 const {
   getProfileValidation,
   updateProfileValidation,
@@ -7,6 +8,11 @@ const {
   activateUserAccountValidation,
 } = require("../middleware/validateRequest");
 const router = express.Router();
+
+// Get basic user details (name, email, etc.) - must come before /:id route
+router.get("/details/:userId", userDetailsController.getUserDetails);
+router.get("/details/bulk", userDetailsController.getUsersDetailsBulk);
+router.post("/details/bulk", userDetailsController.getUsersDetailsBulk);
 
 // Get user's profile
 router.get("/:id", getProfileValidation, userProfileController.getUserProfile);
