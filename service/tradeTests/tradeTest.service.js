@@ -39,6 +39,7 @@ class TradeTestService {
         ministryId,
         status,
         category,
+        exclusive, // If true, only show tests for the specified ministry (exclude general tests)
         page = 1,
         limit = 10,
         sortBy = "createdAt",
@@ -49,8 +50,17 @@ class TradeTestService {
       const query = {};
 
       if (ministryId) {
-        // If ministryId is provided, match it or null (for all ministries)
-        query.$or = [{ ministryId: ministryId }, { ministryId: null }];
+        // Check if exclusive filtering is requested (only this ministry, exclude general tests)
+        const exclusive =
+          filters.exclusive === "true" || filters.exclusive === true;
+
+        if (exclusive) {
+          // Only show tests for this specific ministry
+          query.ministryId = ministryId;
+        } else {
+          // Default: Show tests for this ministry OR tests available to all ministries (null)
+          query.$or = [{ ministryId: ministryId }, { ministryId: null }];
+        }
       }
 
       if (status === "active") {

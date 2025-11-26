@@ -41,6 +41,7 @@ class TradeTestController {
         ministryId: req.query.ministryId,
         status: req.query.status,
         category: req.query.category,
+        exclusive: req.query.exclusive, // If "true", only show tests for the specified ministry (exclude general tests)
         page: req.query.page || 1,
         limit: req.query.limit || 10,
         sortBy: req.query.sortBy || "createdAt",

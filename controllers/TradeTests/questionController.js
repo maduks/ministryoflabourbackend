@@ -57,6 +57,8 @@ class QuestionController {
         difficulty: req.query.difficulty,
         category: req.query.category,
         isActive: req.query.isActive,
+        ministryId: req.query.ministryId, // Optional: filter by ministry (validates test belongs to ministry)
+        exclusive: req.query.exclusive, // If "true", only show questions for tests belonging to the specified ministry
         sortBy: req.query.sortBy || "order",
         sortOrder: req.query.sortOrder || "asc",
       };

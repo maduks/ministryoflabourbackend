@@ -108,6 +108,7 @@ class QuestionService {
         difficulty,
         category,
         isActive,
+        ministryId, // Optional: filter by ministry (through test relationship)
         sortBy = "order",
         sortOrder = "asc",
       } = filters;
@@ -116,6 +117,30 @@ class QuestionService {
       const test = await TradeTest.findById(testId);
       if (!test) {
         throw new Error("Trade test not found");
+      }
+
+      // If ministryId filter is provided, verify the test belongs to that ministry
+      if (ministryId) {
+        // Check if test belongs to the specified ministry or is available to all (null)
+        const exclusive =
+          filters.exclusive === "true" || filters.exclusive === true;
+        const testMinistryId = test.ministryId
+          ? test.ministryId.toString()
+          : null;
+        const filterMinistryId = ministryId.toString();
+
+        if (exclusive) {
+          // Only allow if test belongs to this specific ministry (exclude general tests)
+          if (testMinistryId !== filterMinistryId) {
+            throw new Error("Test does not belong to the specified ministry");
+          }
+        } else {
+          // Allow if test belongs to ministry OR is available to all (null = general test)
+          if (testMinistryId !== null && testMinistryId !== filterMinistryId) {
+            throw new Error("Test does not belong to the specified ministry");
+          }
+          // If testMinistryId is null, it's a general test available to all - allow it
+        }
       }
 
       // Build query
