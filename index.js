@@ -58,6 +58,7 @@ const submissionRoutes = require("./routes/submissionRoutes");
 const transactionServiceHubRoute = require("./routes/transactionServiceHub/transactionServiceHubRoute");
 const transactionRoute = require("./routes/transaction/transactionRoute");
 const templatesRoute = require("./routes/templates/templatesRoute");
+const tradeTestRoutes = require("./routes/tradeTests/tradeTestRoutes");
 require("dotenv").config();
 
 //const OpenAI = require("openai");
@@ -126,6 +127,7 @@ db().then(() => {
   app.use("/api/v1/submissions", submissionRoutes);
   app.use("/api/v1/analytics", analyticsRoutes);
   app.use("/api/v1/comprehensive-analytics", comprehensiveAnalyticsRoutes);
+  app.use("/api/v1/trade-tests", tradeTestRoutes);
 
   // app.use(
   //   "/api/v1/serviceproviders",
