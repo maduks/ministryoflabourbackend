@@ -32,7 +32,7 @@ class TradeTestController {
   }
 
   /**
-   * Get all trade tests with filtering
+   * Get all trade tests with filtering and pagination
    * GET /api/trade-tests/list
    */
   async getAllTradeTests(req, res) {
@@ -41,18 +41,25 @@ class TradeTestController {
         ministryId: req.query.ministryId,
         status: req.query.status,
         category: req.query.category,
+        page: req.query.page || 1,
+        limit: req.query.limit || 10,
+        sortBy: req.query.sortBy || "createdAt",
+        sortOrder: req.query.sortOrder || "desc",
       };
 
-      // Remove undefined filters
-      Object.keys(filters).forEach(
-        (key) => filters[key] === undefined && delete filters[key]
-      );
+      // Remove undefined filters (except page and limit which have defaults)
+      Object.keys(filters).forEach((key) => {
+        if (filters[key] === undefined && key !== "page" && key !== "limit") {
+          delete filters[key];
+        }
+      });
 
-      const tests = await tradeTestService.getAllTradeTests(filters);
+      const result = await tradeTestService.getAllTradeTests(filters);
 
       res.status(200).json({
         success: true,
-        data: tests,
+        data: result.data,
+        pagination: result.pagination,
       });
     } catch (error) {
       console.error("Error in getAllTradeTests controller:", error);

@@ -31,11 +31,19 @@ class TradeTestService {
   }
 
   /**
-   * Get all trade tests with filtering
+   * Get all trade tests with filtering and pagination
    */
   async getAllTradeTests(filters = {}) {
     try {
-      const { ministryId, status, category } = filters;
+      const {
+        ministryId,
+        status,
+        category,
+        page = 1,
+        limit = 10,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = filters;
 
       // Build query
       const query = {};
@@ -55,10 +63,22 @@ class TradeTestService {
         query.category = category;
       }
 
-      // Execute query with population
+      // Build sort object
+      const sort = {};
+      sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+      // Calculate skip for pagination
+      const skip = (page - 1) * limit;
+
+      // Get total count before pagination
+      const total = await TradeTest.countDocuments(query);
+
+      // Execute query with population and pagination
       const tests = await TradeTest.find(query)
         .populate("ministryId", "name")
-        .sort({ createdAt: -1 })
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
         .lean();
 
       // Count questions for each test
@@ -77,7 +97,17 @@ class TradeTestService {
         })
       );
 
-      return testsWithQuestionCount;
+      return {
+        data: testsWithQuestionCount,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1,
+        },
+      };
     } catch (error) {
       console.error("Error in getAllTradeTests:", error);
       throw error;
